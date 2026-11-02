@@ -1,0 +1,51 @@
+application:
+  subdomain: verdaccio
+  multi_instance: false
+  upstreams:
+    - location: /package-licenses/
+      backend: file:///lzcapp/pkg/content/licenses/
+    - location: /
+      backend: http://verdaccio:4873/
+
+services:
+  verdaccio:
+    # upstream: verdaccio/verdaccio:7.0.2
+    image: docker.1ms.run/verdaccio/verdaccio:7.0.2
+    environment:
+      - VERDACCIO_PORT=4873
+      - VERDACCIO_PROTOCOL=http
+      # Tarball URLs in registry metadata are absolute. Without the public URL
+      # Verdaccio advertises the container's own address and `npm install`
+      # then fails to download.
+      - |-
+        VERDACCIO_PUBLIC_URL=https://{{ .S.AppDomain }}
+      - VERDACCIO_ADDRESS=0.0.0.0
+      - TZ=Asia/Shanghai
+    binds:
+      # Only the storage dir is mounted: the image ships its config under
+      # /verdaccio/conf, and mounting that directory would replace it with an
+      # empty one and the container would refuse to start.
+      - /lzcapp/var/storage:/verdaccio/storage
+
+usage: |
+  Verdaccio 是私有 npm 仓库：既能缓存公共包加速安装，也能托管自己的私有包。
+
+  使用方法：
+  1. 打开应用是 Verdaccio 的网页界面，可以浏览已缓存的包。
+  2. 注册第一个账号：在网页里点登录/注册，或在本机执行
+     `npm adduser --registry https://<你的应用域名>`，按提示填用户名密码。
+     这个账号就是发布私有包的凭据，**请自己设置密码，不存在内置账号**。
+  3. 让本机 npm 走这个仓库：
+     `npm config set registry https://<你的应用域名>`
+     之后安装公共包会先经过它（首次从上游拉取并缓存，之后走本地）。
+  4. 发布自己的包：`npm publish --registry https://<你的应用域名>`（需先登录）。
+
+  数据与安全：
+  - 缓存的包、私有包和账号密码文件都在 /lzcapp/var/storage，卸载应用会一并删除，请定期备份。
+  - 账号由你首次注册时创建，密码自己设，不存在内置弱口令。
+  - 应用经懒猫入口鉴权访问；已配置外部访问地址，否则 npm 拿到的下载链接会指向容器内网。
+
+  说明：
+  - 单容器部署，无需数据库。
+  - 已配置外部访问地址（VERDACCIO_PUBLIC_URL），避免反代下包下载链接失效。
+  - 未做真机验证：注册账号、安装公共包、发布私有包以及重启后持久化均未在设备上实测。

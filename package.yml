@@ -1,0 +1,18 @@
+package: community.lazycat.app.verdaccio
+name: Verdaccio
+version: 0.0.0
+description: "Private npm registry: cache public packages and host your own, behind one address."
+min_os_version: "1.5.0"
+homepage: https://verdaccio.org/
+author: Verdaccio contributors
+license: MIT
+permissions:
+  required:
+    - net.internet
+locales:
+  zh:
+    name: Verdaccio
+    description: "私有 npm 仓库：缓存公共包加速安装，也能托管自己的私有包，一个地址搞定。"
+  en:
+    name: Verdaccio
+    description: "Private npm registry: cache public packages and host your own, behind one address."
